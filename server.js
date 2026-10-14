@@ -37,6 +37,8 @@ wss.on('connection', (ws, req) => {
     if (m.type === 'state') room.last.set(m.mat, { msg, t: Date.now() });
     else room.last.delete(m.mat);
     for (const c of room.clients) if (c !== ws && c.readyState === 1) c.send(msg);
+    // Confirm to the scorer which change made it through, so its offline queue can clear.
+    if (m.type === 'state' && Number.isInteger(m.state && m.state.rev)) ws.send(JSON.stringify({ type: 'ack', mat: m.mat, rev: m.state.rev }));
   });
   ws.on('close', () => {
     room.clients.delete(ws);
