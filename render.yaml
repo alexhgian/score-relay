@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: score-relay
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /
+    envVars:
+      - key: RELAY_KEY
+        sync: false   # Render asks for it at deploy time; the value lives only in Render and in a local file
