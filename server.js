@@ -28,11 +28,16 @@ wss.on('connection', (ws, req) => {
   const now = Date.now();
   for (const { msg, t } of room.last.values()) if (now - t < FRESH_MS) ws.send(msg);
 
+  let toldRejected = false;
   ws.on('message', data => {
-    if (!canPublish) return;
     let m;
     try { m = JSON.parse(data); } catch { return; }
     if (!m || !['state', 'release'].includes(m.type) || !Number.isInteger(m.mat) || m.mat < 0 || m.mat > 15) return;
+    if (!canPublish) {
+      // Tell the scorer once, so the table sees the problem right away instead of waiting on a missing ack.
+      if (!toldRejected) { toldRejected = true; ws.send(JSON.stringify({ type: 'rejected', reason: url.searchParams.get('key') ? 'wrong-key' : 'no-key' })); }
+      return;
+    }
     const msg = JSON.stringify(m);
     if (m.type === 'state') room.last.set(m.mat, { msg, t: Date.now() });
     else room.last.delete(m.mat);
